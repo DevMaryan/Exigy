@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Exigy
 {
@@ -6,7 +8,9 @@ namespace Exigy
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Game.Start();
         }
+
+
     }
 }
