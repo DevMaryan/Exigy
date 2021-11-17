@@ -1,4 +1,5 @@
-﻿using Exigy.ErrorHandler;
+﻿using Exigy.Data;
+using Exigy.ErrorHandler;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,21 +9,34 @@ using System.Timers;
 
 namespace Exigy
 {
-    public static class Game
+    public class Game
     {
-        public static void Start()
+        public Game()
+        {
+            _allPlayersList = new Players();
+        }
+
+        public Players _allPlayersList { get; set; }
+
+        public void Start()
         {
             try
             {
                 Welcome();
-                Player();
+
+                Console.WriteLine("\nPlease enter your name: ");
+                var name = Console.ReadLine();
+                var UpperName = name.ToUpper(new CultureInfo("en-US", false));
+
+                var newPlayerId = Player(UpperName);
+
                 var newDeck = NewDeck();
                 var shuffledDeck = ShuffledMessage(newDeck);
 
                 var middleList = MiddlePile(shuffledDeck);
                 var circleList = RemoveMidlePile(shuffledDeck, middleList);
 
-                DivideInHours(circleList, middleList);
+                DivideInHours(circleList, middleList, newPlayerId);
             }
             catch(MajorError ex)
             {
@@ -32,7 +46,7 @@ namespace Exigy
             
         }
 
-        public static void DivideInHours(List<string> circleList, List<string> middleList)
+        public void DivideInHours(List<string> circleList, List<string> middleList,int newPlayerId)
         {
             var ConvertionOne = ConvertToHour(circleList);
             var OneHour = ConvertionOne.Item1;
@@ -124,91 +138,76 @@ namespace Exigy
 
             for(var i = 0; i < middleList.Count; i++)
             {
-                var counter = 0;
-                while (counter < 48)
+                // If we still have cards
+                if (middleList.Count > 0)
                 {
-                    // If we still have cards
-                    if(middleList.Count > 0)
+                    // Start from the middle card
+                    var middleCard = middleList[i];
+
+                    // Get the value from the middle card
+                    var middleCardValue = FindValue(middleCard.Substring(0, 1));
+
+                    // Remove the used card
+                    middleList.Remove(middleCard);
+                    UsedCard.Add(middleCard); // Add to used cards
+
+                    // Go to the Hour of the Middle Card if the card is not K or 13
+                    if (middleCardValue != "13" && middleCard != "")
                     {
-                        // Start from the middle card
-                        var middleCard = middleList[i];
+                        var theHour = FindHour(middleCardValue, OneHour, TwoHour, TreeHour, FourHour, FiveHour, SixHour, SevenHour, EigthHour, NineHour, TenHour, ElevenHour, TwelveHour);
 
-                        // Get the value from the middle card
-                        var middleCardValue = FindValue(middleCard.Substring(0, 1));
-
-                        // Remove the used card
-                        middleList.Remove(middleCard);
-                        UsedCard.Add(middleCard); // Add to used cards
-
-                        // Go to the Hour of the Middle Card if the card is not K or 13
-                        if (middleCardValue != "13" && middleCard != "")
+                        var counter = 0;
+                        while (counter < 48)
                         {
-                            var theHour = FindHour(middleCardValue, OneHour, TwoHour, TreeHour, FourHour, FiveHour, SixHour, SevenHour, EigthHour, NineHour, TenHour, ElevenHour, TwelveHour);
+                            if(theHour.Count > 0)
+                            {
+                                // Get Hour card
+                                var theHourCard = theHour[0];
 
-                            // Get Hour card
-                            var theHourCard = theHour[0];
+                                // Hour Card value
+                                var theHourValue = FindValue(theHourCard.Substring(0, 1));
 
-                            // Hour Card value
-                            var theHourValue = FindValue(theHourCard.Substring(0, 1));
+                                // Remove the used card
+                                theHour.Remove(theHourCard);
+                                UsedCard.Add(theHourCard); // Add to used cards
 
-                            // Remove the used card
-                            theHour.Remove(theHourCard);
-                            UsedCard.Add(theHourCard); // Add to used cards
-
-                            var NextHour = FindHour(theHourValue, OneHour, TwoHour, TreeHour, FourHour, FiveHour, SixHour, SevenHour, EigthHour, NineHour, TenHour, ElevenHour, TwelveHour);
+                                // For the NExt hour
+                                var NextHour = FindHour(theHourValue, OneHour, TwoHour, TreeHour, FourHour, FiveHour, SixHour, SevenHour, EigthHour, NineHour, TenHour, ElevenHour, TwelveHour);
+                                
+                            }
+                            counter += 1;
                         }
                     }
-
-                    counter += 1;
-
                 }
+
             }
 
-
-
-            //var counter = 0;
-            //while (counter < 48)
-            //{
-            //    var theValue = "";
-
-            //    for (var i = 0; i < middleList.Count; i++)
-            //    {
-            //        // Current Middle Card
-            //        var currentCard = middleList[i];
-            //        // The Value of the Middle Card
-            //        theValue = FindValue(currentCard.Substring(0, 1));
-            //    }
-
-            //    // Find Hour by theValue of middle Card
-            //    var Hour = FindHour(theValue, OneHour, TwoHour, TreeHour, FourHour, FiveHour, SixHour, SevenHour, EigthHour, NineHour, TenHour, ElevenHour, TwelveHour);
-            //    // Get the first Card
-            //    var firstCard = Hour[0];
-
-            //    // The value of the First Card
-            //    var valueOfFirstCard = FindValue(firstCard.Substring(0, 1));
-
-            //    if(valueOfFirstCard == "13")
-            //    {
-            //        Console.WriteLine("GAME OVER");
-            //    }
-            //    // Card is used
-            //    OneHour.Remove(firstCard);
-
-
-            //    foreach (var el in OneHour)
-            //    {
-            //        Console.WriteLine($"One hour left {el}");
-            //    }
-
-            //    counter += 1;
-            //}
-
-
-
-
+            Results(UsedCard, newPlayerId);
         }
 
-        private static void DisplayHours(List<string> Hour,string HourName)
+
+        public void Results(List<string> UsedCard,int newPlayerId)
+        {
+            var thePlayer = _allPlayersList.PlayersList.FirstOrDefault(x => x.Id == newPlayerId);
+            if (UsedCard.Count == 52)
+            {
+
+                thePlayer.Result = "WON";
+                Console.WriteLine($"\nCongratulations {thePlayer.Name},you won!");
+
+                Console.WriteLine($"\nUsed cards:{UsedCard.Count}");
+            }
+            else
+            {
+                thePlayer.Result = "LOSE";
+                Console.WriteLine($"\nYou lose {thePlayer.Name}, try again!");
+                Console.WriteLine($"\nUsed cards:{UsedCard.Count}");
+            }
+
+            // Update Json file
+            _allPlayersList.WriteToFile();
+        }
+        private void DisplayHours(List<string> Hour,string HourName)
         {
             Console.WriteLine($"\n{HourName}: ");
             for (var i = 0; i < Hour.Count; i++)
@@ -217,7 +216,7 @@ namespace Exigy
             }
         }
 
-        public static (List<string>, List<string>) ConvertToHour(List<string> circleList)
+        public (List<string>, List<string>) ConvertToHour(List<string> circleList)
         {
             List<string> Hour = new List<string>();
             var cards = 0;
@@ -236,7 +235,7 @@ namespace Exigy
             return (Hour, circleList);
         }
 
-        private static List<string> MiddlePile(List<string> shuffledDeck)
+        private List<string> MiddlePile(List<string> shuffledDeck)
         {
             List<string> MiddleList = new List<string>();
             var cards = 0;
@@ -259,7 +258,7 @@ namespace Exigy
             return MiddleList;
         }
 
-        public static List<string> RemoveMidlePile(List<string> shuffledDeck,List<string> middleList)
+        public List<string> RemoveMidlePile(List<string> shuffledDeck,List<string> middleList)
         {
             var circlePiles = shuffledDeck.Except(middleList).ToList();
             Console.WriteLine("");
@@ -281,7 +280,7 @@ namespace Exigy
             return circlePiles;
         }
 
-        public static List<string> FindHour(string str,List<string> OneHour, List<string> TwoHour, List<string> TreeHour, List<string> FourHour, List<string> FiveHour, List<string> SixHour, List<string> SevenHour, List<string> EigthHour, List<string> NineHour, List<string> TenHour, List<string> ElevenHour, List<string> TwelveHour)
+        public List<string> FindHour(string str,List<string> OneHour, List<string> TwoHour, List<string> TreeHour, List<string> FourHour, List<string> FiveHour, List<string> SixHour, List<string> SevenHour, List<string> EigthHour, List<string> NineHour, List<string> TenHour, List<string> ElevenHour, List<string> TwelveHour)
         {
             List<string> result = new List<string>();
 
@@ -326,7 +325,7 @@ namespace Exigy
             }
             return result;
         }
-        public static string FindValue(string str)
+        public string FindValue(string str)
         {
             var result = "";
 
@@ -374,12 +373,12 @@ namespace Exigy
             return result;
         }
 
-        private static List<string> NewDeck()
+        private List<string> NewDeck()
         {
             return new Cards().CardDeck();
         }
 
-        private static void Welcome()
+        private void Welcome()
         {
             string welcome = "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!Welcome to Clock Patiance Game!!\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
             foreach (var str in welcome)
@@ -389,22 +388,27 @@ namespace Exigy
             }
         }
 
-        private static void Player()
+        private int Player(string UpperName)
         {
-            Console.WriteLine("\nPlease enter your name: ");
-            var name = Console.ReadLine();
-            var UpperName = name.ToUpper(new CultureInfo("en-US", false));
+            Random rnd = new Random();
+            int randomInd = rnd.Next(0, 1000);
 
             var newPlayer = new Player()
             {
+                Id = randomInd,
                 Name = UpperName,
                 Start = DateTime.UtcNow.ToLongDateString()
             };
 
+
+            _allPlayersList.AddNew(newPlayer);
+
             Console.WriteLine($"\n{newPlayer.Name} welcome!\n{newPlayer.Start} \n");
+
+            return newPlayer.Id;
         }
 
-        private static List<string> ShuffledMessage(List<string> newDeck)
+        private List<string> ShuffledMessage(List<string> newDeck)
         {
             var newShuffled = Shuffle(newDeck);
             Console.WriteLine("\nPlease allow us to shuffle the cards\n");
@@ -425,7 +429,7 @@ namespace Exigy
             return newShuffled;
         }
 
-        private static List<string> Shuffle(List<string> deck)
+        private List<string> Shuffle(List<string> deck)
         {
             return deck.OrderBy(x => Guid.NewGuid()).ToList();
         }
