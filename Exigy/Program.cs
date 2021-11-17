@@ -15,7 +15,7 @@ namespace Exigy
                 newGame.Start();
                 Console.WriteLine("\nNew game?\nyes - for new game\nno - to quit");
                 var response = Console.ReadLine().Trim();
-                if(response == "No")
+                if(response == "no")
                 {
                     stop = true;
                 }
